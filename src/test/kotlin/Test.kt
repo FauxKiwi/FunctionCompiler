@@ -1,5 +1,5 @@
 fun main() {
-    val function = "2^5"
+    val function = "1-+5^3/5"
     val tokenized = Lexer.Tokenizer(function)
     printTokens(tokenized)
     val lexed = Lexer.TokenConcat(tokenized)
@@ -11,4 +11,6 @@ fun main() {
     printTree(tree)
     val result = Calculator(tree)
     println(result)
+
+    println(Calculator("1-+5^3/5"))
 }

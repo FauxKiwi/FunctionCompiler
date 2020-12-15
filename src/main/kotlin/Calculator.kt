@@ -1,4 +1,6 @@
 object Calculator {
+    operator fun invoke(function: String): Int = Calculator(Parser(Lexer(function)))
+
     operator fun invoke(function: TreeNode): Int {
         try {
             return when (function) {

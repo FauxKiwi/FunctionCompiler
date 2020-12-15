@@ -1,5 +1,5 @@
 object Parser {
-    operator fun invoke(tokens: List<Token>): ExpressionNode = TokenParser(TokenSorter(listOf()))
+    operator fun invoke(tokens: List<Token>): ExpressionNode = TokenParser(TokenSorter(tokens))
 
     object TokenSorter {
         operator fun invoke(tokens: List<Token>): List<Token> {
@@ -50,7 +50,7 @@ object Parser {
                         if (!right) {
                             do {
                                 parent = parent.parent ?: return tree
-                            } while (parent !is OperatorNode)
+                            } while (parent !is OperatorNode || parent.leftChild != null)
                         }
                         right = false
                     }

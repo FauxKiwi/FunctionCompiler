@@ -1,7 +1,5 @@
 object Lexer {
-    operator fun invoke(function: String): List<Token> {
-        return TokenConcat(Tokenizer(function))
-    }
+    operator fun invoke(function: String): List<Token> = TokenConcat(Tokenizer(function))
 
     object Tokenizer {
         operator fun invoke(function: String): List<Token> {
