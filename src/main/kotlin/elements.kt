@@ -1,12 +1,13 @@
-abstract class Token(val type: TokenType)
-enum class TokenType { EXPRESSION, NUMBER, OPERATOR, SIGN }
-class ExpressionToken(val start/* | end*/: Boolean) : Token(TokenType.EXPRESSION)
-class NumberToken(var number: Int) : Token(TokenType.NUMBER)
-class OperatorToken(val operator: Operator) : Token(TokenType.OPERATOR)
-class SignToken(val sign: Boolean /* + = true; - = false */) : Token(TokenType.SIGN)
+abstract class Token
+enum class TokenType { EXPR_START, EXPR_END, NUMBER, OPERATOR, SIGN }
+class ExprStartToken : Token()
+class ExprEndToken : Token()
+class ExpressionRepresentToken(val expr: List<Token>) : Token()
+class NumberToken(var number: Int) : Token()
+class OperatorToken(val operator: Operator) : Token()
+class SignToken(val sign: Boolean /* + = true; - = false */) : Token()
 enum class Operator(rank: Int) {
     PLUS(0), MINUS(0), TIMES(1), DIV(1), REM(1), POW(2);
-
     companion object {
         fun ofChar(c: Char) = when (c) {
             '+' -> PLUS; '-' -> MINUS; '*' -> TIMES; '/' -> DIV; '%' -> REM; '^' -> POW; else -> throw SyntaxError("Unknown operator token '$c'")

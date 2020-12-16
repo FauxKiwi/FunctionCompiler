@@ -6,22 +6,61 @@ object Parser {
             if (tokens.isEmpty()) return listOf()
             val output = mutableListOf<Token>()
 
-            var found = tokens.reversed().find { it is OperatorToken && (it.operator == Operator.PLUS || it.operator == Operator.MINUS) }
-            if (found == null) found = tokens.reversed().find { it is OperatorToken && (it.operator == Operator.TIMES || it.operator == Operator.DIV || it.operator == Operator.REM) }
-            if (found == null) found = tokens.reversed().find { it is OperatorToken && it.operator == Operator.POW }
+            var expr: List<Token> = tokens
+
+            val exprEnd = expr.indexOfLast { it is ExprEndToken }
+            if (exprEnd >= 0) {
+                val exprStart = expr.indexOfFirst { it is ExprStartToken }
+                if (exprStart < 0) throw SyntaxError("Closed bracket has not been opened")
+                val subExpr = expr.subList(exprStart + 1, exprEnd)
+                val leftOfSubExpr = if (exprStart > 0) expr.subList(0, exprStart - 1) else listOf()
+                printTokens(leftOfSubExpr)
+                val rightOfSubExpr = if (exprEnd < expr.size - 1) expr.subList(exprEnd + 1, expr.size) else listOf()
+                printTokens(rightOfSubExpr)
+                expr = leftOfSubExpr + ExpressionRepresentToken(TokenSorter(subExpr)) + rightOfSubExpr
+                printTokens(expr)
+            }
+
+            var found: Token?
+            found = expr.reversed().find { it is OperatorToken && (it.operator == Operator.PLUS || it.operator == Operator.MINUS) }
+            if (found == null) found = expr.reversed().find { it is OperatorToken && (it.operator == Operator.TIMES || it.operator == Operator.DIV || it.operator == Operator.REM) }
+            if (found == null) found = expr.reversed().find { it is OperatorToken && it.operator == Operator.POW }
             if (found == null) {
-                found = tokens.find { it is NumberToken }
+                found = expr.find { it is NumberToken || it is ExpressionRepresentToken }
                 return if (found == null) listOf()
                 else listOf(found)
             }
             output.add(found)
 
-            val functionSplit = tokens.lastIndexOf(found)
-            val rightString = tokens.subList(functionSplit + 1, tokens.size)
-            val leftString = tokens.subList(0, functionSplit)
+            val functionSplit = expr.lastIndexOf(found)
+            val rightString = expr.subList(functionSplit + 1, expr.size)
+            val leftString = expr.subList(0, functionSplit)
 
-            output.addAll(TokenSorter(rightString))
-            output.addAll(TokenSorter(leftString))
+            val rightTokens = TokenSorter(rightString)
+            val leftTokens = TokenSorter(leftString)
+
+            output.addAll(rightTokens)
+            output.addAll(leftTokens)
+
+            return output
+        }
+    }
+
+    object ExpressionResolver {
+        operator fun invoke(tokens: List<Token>): List<Token> {
+            val output = mutableListOf<Token>()
+
+            val iterator = tokens.iterator()
+
+            for (token in iterator) {
+                if (token is ExpressionRepresentToken) {
+                    output.add(ExprEndToken())
+                    output.addAll(token.expr)
+                    output.add(ExprStartToken())
+                } else {
+                    output.add(token)
+                }
+            }
 
             return output
         }
@@ -36,12 +75,22 @@ object Parser {
             var parent: TreeNode = tree
             var right = true
             while (iterator.hasNext()) {
-                val node = nextNode(parent, iterator.next())
+                val token = iterator.next()
+                if (token is ExprStartToken) {
+                    while (parent !is ExpressionNode) {
+                        parent = parent.parent ?: return tree
+                    }
+                    parent = parent.parent ?: return tree
+                }
+                val node = nextNode(parent, token)
                 when (parent) {
                     is ExpressionNode -> parent.rootNode = node
                     is OperatorNode -> if (right) parent.rightChild = node else parent.leftChild = node
                 }
                 when (node) {
+                    is ExpressionNode -> {
+                        parent = node
+                    }
                     is OperatorNode -> {
                         parent = node
                         right = true
@@ -61,6 +110,7 @@ object Parser {
         }
 
         fun nextNode(parent: TreeNode, token: Token): TreeNode = when (token) {
+            is ExprEndToken -> ExpressionNode(parent, null)
             is NumberToken -> NumberNode(parent, token.number)
             is OperatorToken -> OperatorNode(parent, token.operator, null, null)
             else -> throw SyntaxError("Unexpected token: $token")

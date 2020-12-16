@@ -1,6 +1,8 @@
 fun Token.print() {
     when (this) {
-        is ExpressionToken -> print("Expression ${if (start) "start" else "end"}")
+        is ExprStartToken -> print("Expression Start")
+        is ExprEndToken -> print("Expression End")
+        is ExpressionRepresentToken -> { print("Expression: "); printTokensNoNL(expr) }
         is NumberToken -> print("Number: $number")
         is OperatorToken -> print("Operator: ${operator.name}")
         is SignToken -> print("Sign: ${if (sign) '+' else '-'}")
@@ -16,6 +18,16 @@ fun printTokens(tokens: List<Token>) {
     }
     print(']')
     println()
+}
+
+fun printTokensNoNL(tokens: List<Token>) {
+    print('[')
+    val iterator = tokens.iterator()
+    for (token in iterator) {
+        token.print()
+        if (iterator.hasNext()) print(", ")
+    }
+    print(']')
 }
 
 fun TreeNode.print(before: String = "") {

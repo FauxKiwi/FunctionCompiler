@@ -5,24 +5,27 @@ object Lexer {
         operator fun invoke(function: String): List<Token> {
             val tokens = mutableListOf<Token>()
 
-            var lastToken: Token = ExpressionToken(true)
+            var lastToken: Token = ExprStartToken().also { tokens.add(it) }
 
-            tokens.add(ExpressionToken(true))
-            val expressionStarts = 1
+            var expressionStarts = 1
 
             val iterator = function.trimAll().iterator()
             for (c in iterator) {
                 val token: Token = when (lastToken) {
-                    is ExpressionToken, is OperatorToken -> tokenOf(c, TokenType.NUMBER, TokenType.SIGN)
-                    is NumberToken -> tokenOf(c, TokenType.NUMBER, TokenType.OPERATOR)
-                    is SignToken -> tokenOf(c, TokenType.SIGN, TokenType.NUMBER)
+                    is ExprStartToken, is OperatorToken -> tokenOf(c, TokenType.NUMBER, TokenType.SIGN, TokenType.EXPR_START)
+                    is ExprEndToken, is NumberToken -> tokenOf(c, TokenType.NUMBER, TokenType.OPERATOR, TokenType.EXPR_END)
+                    is SignToken -> tokenOf(c, TokenType.SIGN, TokenType.NUMBER, TokenType.EXPR_START)
                     else -> null
                 } ?: throw SyntaxError("Unexpected token '$c'")
                 lastToken = token
                 tokens.add(token)
+                when (token) {
+                    is ExprStartToken -> ++expressionStarts
+                    is ExprEndToken -> --expressionStarts
+                }
             }
             repeat(expressionStarts) {
-                tokens.add(ExpressionToken(false))
+                tokens.add(ExprEndToken())
             }
 
             return tokens
@@ -37,6 +40,12 @@ object Lexer {
             }
             if (accepted.contains(TokenType.SIGN)) {
                 if (c in "+-") return SignToken(c == '+')
+            }
+            if (accepted.contains(TokenType.EXPR_START)) {
+                if (c == '(') return ExprStartToken()
+            }
+            if (accepted.contains(TokenType.EXPR_END)) {
+                if (c == ')') return ExprEndToken()
             }
             return null
         }
@@ -89,6 +98,9 @@ object Lexer {
                 }
                 ++i
             }
+
+            output.removeAt(0)
+            output.removeAt(output.size - 1)
 
             return output
         }
