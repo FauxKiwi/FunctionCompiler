@@ -4,7 +4,7 @@ import kotlin.math.sqrt
 import kotlin.math.tan
 
 abstract class Token
-enum class TokenType { EXPR_START, EXPR_END, NAME, NUMBER, OPERATOR, SIGN }
+enum class TokenType { EXPR_START, EXPR_END, NAME, NUMBER, DOT, OPERATOR, SIGN }
 class NameToken(val name: String) : Token()
 class ExprStartToken : Token()
 class ExprEndToken : Token()

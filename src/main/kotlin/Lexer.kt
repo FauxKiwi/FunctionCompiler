@@ -13,7 +13,9 @@ object Lexer {
             for (c in iterator) {
                 val token: Token = when (lastToken) {
                     is ExprStartToken, is OperatorToken -> tokenOf(c, TokenType.NUMBER, TokenType.NAME, TokenType.SIGN, TokenType.EXPR_START)
-                    is ExprEndToken, is NumberToken -> tokenOf(c, TokenType.NUMBER, TokenType.OPERATOR, TokenType.EXPR_END)
+                    is ExprEndToken -> tokenOf(c, TokenType.OPERATOR, TokenType.EXPR_END)
+                    is NumberToken -> tokenOf(c, TokenType.NUMBER, TokenType.DOT, TokenType.OPERATOR, TokenType.EXPR_END)
+                    is DotToken -> tokenOf(c, TokenType.NUMBER)
                     is FunctionToken -> tokenOf(c, TokenType.EXPR_START)
                     is NameToken -> tokenOf(c, TokenType.OPERATOR, TokenType.EXPR_END, TokenType.NAME, TokenType.EXPR_START)
                     is SignToken -> tokenOf(c, TokenType.SIGN, TokenType.NUMBER, TokenType.NAME, TokenType.EXPR_START)
@@ -36,6 +38,8 @@ object Lexer {
         private fun tokenOf(c: Char, vararg accepted: TokenType): Token? {
             if (accepted.contains(TokenType.NUMBER)) {
                 if (c in "1234567890") return NumberToken(c.toString().toDouble())
+            }
+            if (accepted.contains(TokenType.DOT)) {
                 if (c in ".") return DotToken()
             }
             if (accepted.contains(TokenType.OPERATOR)) {
@@ -93,24 +97,38 @@ object Lexer {
                             newToken.number = newToken.number * (if (next.sign) 1 else -1)
                         } else if (next is NumberToken) {
                             newToken.number = newToken.number * next.number
+                            var afterDot = false
+                            var decAfterDot = 0
                             while (++i < tokens.size - 1) {
                                 val nextNumber = tokens[i + 1]
                                 if (nextNumber is NumberToken) {
                                     newToken.number = newToken.number * 10 + nextNumber.number
+                                    if (afterDot) ++decAfterDot
+                                } else if (next is DotToken) {
+                                    if (afterDot) throw SyntaxError("Unexpected token '.'")
+                                    afterDot = true
                                 } else break@signConcat
                             }
+                            repeat(decAfterDot) { newToken.number /= 10.0 }
                             output.add(newToken)
                         } else break@signConcat
                     } while (++i < tokens.size - 1)
                     output.add(newToken)
                 } else if (token is NumberToken) {
                     val newToken = NumberToken(token.number)
+                    var afterDot = false
+                    var decAfterDot = 0
                     numberConcat@do {
                         val next = tokens[i + 1]
                         if (next is NumberToken) {
                             newToken.number = newToken.number * 10 + next.number
+                            if (afterDot) ++decAfterDot
+                        } else if (next is DotToken) {
+                            if (afterDot) throw SyntaxError("Unexpected token '.'")
+                            afterDot = true
                         } else break@numberConcat
                     } while (++i < tokens.size - 1)
+                    repeat(decAfterDot) { newToken.number /= 10.0 }
                     output.add(newToken)
                 } else {
                     output.add(token)
