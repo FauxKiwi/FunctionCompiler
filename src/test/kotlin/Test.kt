@@ -14,7 +14,7 @@ fun main() {
 
     println(Calculator("1-+5^3/5"))*/
 
-    val tokens = Lexer("(1-6)^3/5")
+    val tokens = Lexer("(x-6)^3/5")
     printTokens(tokens)
     println(" --- ")
     val sorted = Parser.TokenSorter(tokens)
@@ -26,7 +26,7 @@ fun main() {
     val tree = Parser.TokenParser(resolved)
     printTree(tree)
     println(" --- ")
-    println(Calculator(tree))
+    println(Calculator(tree, Pair("x", 1.0)))
     println()
     println(" ------- ")
     println()

@@ -15,7 +15,7 @@ object Parser {
                 val subExpr = expr.subList(exprStart + 1, exprEnd)
                 val leftOfSubExpr = if (exprStart > 0) expr.subList(0, exprStart - 1) else listOf()
                 val rightOfSubExpr = if (exprEnd < expr.size - 1) expr.subList(exprEnd + 1, expr.size) else listOf()
-                expr = leftOfSubExpr + ExpressionRepresentToken(TokenSorter(subExpr)) + rightOfSubExpr
+                expr = leftOfSubExpr + ExpressionToken(TokenSorter(subExpr)) + rightOfSubExpr
             }
 
             var found: Token?
@@ -23,7 +23,7 @@ object Parser {
             if (found == null) found = expr.reversed().find { it is OperatorToken && (it.operator == Operator.TIMES || it.operator == Operator.DIV || it.operator == Operator.REM) }
             if (found == null) found = expr.reversed().find { it is OperatorToken && it.operator == Operator.POW }
             if (found == null) {
-                found = expr.find { it is NumberToken || it is ExpressionRepresentToken }
+                found = expr.find { it is NumberToken || it is VarToken || it is ExpressionToken}
                 return if (found == null) listOf()
                 else listOf(found)
             }
@@ -50,7 +50,7 @@ object Parser {
             val iterator = tokens.iterator()
 
             for (token in iterator) {
-                if (token is ExpressionRepresentToken) {
+                if (token is ExpressionToken) {
                     output.add(ExprEndToken())
                     output.addAll(token.expr)
                     output.add(ExprStartToken())
@@ -92,7 +92,7 @@ object Parser {
                         parent = node
                         right = true
                     }
-                    is NumberNode -> {
+                    is NumberNode, is VarNode -> {
                         if (!right) {
                             do {
                                 parent = parent.parent ?: return tree
@@ -109,6 +109,7 @@ object Parser {
         fun nextNode(parent: TreeNode, token: Token): TreeNode = when (token) {
             is ExprEndToken -> ExpressionNode(parent, null)
             is NumberToken -> NumberNode(parent, token.number)
+            is VarToken -> VarNode(parent, token.name)
             is OperatorToken -> OperatorNode(parent, token.operator, null, null)
             else -> throw SyntaxError("Unexpected token: $token")
         }

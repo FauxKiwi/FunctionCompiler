@@ -12,9 +12,10 @@ object Lexer {
             val iterator = function.trimAll().iterator()
             for (c in iterator) {
                 val token: Token = when (lastToken) {
-                    is ExprStartToken, is OperatorToken -> tokenOf(c, TokenType.NUMBER, TokenType.SIGN, TokenType.EXPR_START)
+                    is ExprStartToken, is OperatorToken -> tokenOf(c, TokenType.NUMBER, TokenType.VAR, TokenType.SIGN, TokenType.EXPR_START)
                     is ExprEndToken, is NumberToken -> tokenOf(c, TokenType.NUMBER, TokenType.OPERATOR, TokenType.EXPR_END)
-                    is SignToken -> tokenOf(c, TokenType.SIGN, TokenType.NUMBER, TokenType.EXPR_START)
+                    is VarToken -> tokenOf(c, TokenType.OPERATOR, TokenType.EXPR_END)
+                    is SignToken -> tokenOf(c, TokenType.SIGN, TokenType.NUMBER, TokenType.VAR, TokenType.EXPR_START)
                     else -> null
                 } ?: throw SyntaxError("Unexpected token '$c'")
                 lastToken = token
@@ -33,7 +34,8 @@ object Lexer {
 
         private fun tokenOf(c: Char, vararg accepted: TokenType): Token? {
             if (accepted.contains(TokenType.NUMBER)) {
-                if (c in "1234567890") return NumberToken(c.toString().toInt())
+                if (c in "1234567890") return NumberToken(c.toString().toDouble())
+                if (c in ".") return DotToken()
             }
             if (accepted.contains(TokenType.OPERATOR)) {
                 if (c in "+-*/%^") return OperatorToken(Operator.ofChar(c))
@@ -42,10 +44,13 @@ object Lexer {
                 if (c in "+-") return SignToken(c == '+')
             }
             if (accepted.contains(TokenType.EXPR_START)) {
-                if (c == '(') return ExprStartToken()
+                if (c in "([") return ExprStartToken()
             }
             if (accepted.contains(TokenType.EXPR_END)) {
-                if (c == ')') return ExprEndToken()
+                if (c in ")]") return ExprEndToken()
+            }
+            if (accepted.contains(TokenType.VAR)) {
+                if (c in "x") return VarToken("x")
             }
             return null
         }
@@ -67,7 +72,7 @@ object Lexer {
             while (i < tokens.size) {
                 val token = tokens[i]
                 if (token is SignToken) {
-                    val newToken = NumberToken(if (token.sign) 1 else -1)
+                    val newToken = NumberToken(if (token.sign) 1.0 else -1.0)
                     signConcat@do {
                         val next = tokens[i + 1]
                         if (next is SignToken) {

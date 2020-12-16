@@ -2,8 +2,10 @@ fun Token.print() {
     when (this) {
         is ExprStartToken -> print("Expression Start")
         is ExprEndToken -> print("Expression End")
-        is ExpressionRepresentToken -> { print("Expression: "); printTokensNoNL(expr) }
+        is ExpressionToken -> { print("Expression: "); printTokensNoNL(expr) }
+        is FunctionToken -> { print("Function \"${function.name}\""); printTokensNoNL(expr) }
         is NumberToken -> print("Number: $number")
+        is VarToken -> print("Var: $name")
         is OperatorToken -> print("Operator: ${operator.name}")
         is SignToken -> print("Sign: ${if (sign) '+' else '-'}")
     }
@@ -36,12 +38,17 @@ fun TreeNode.print(before: String = "") {
             println("${before}Expression")
             rootNode?.print("$before ")
         }
+        is FunctionNode -> {
+            println("${before}Function ${function.name}")
+            expr?.print("$before ")
+        }
+        is NumberNode -> println("$before$number")
+        is VarNode -> println("$before$name")
         is OperatorNode -> {
             leftChild?.print("$before ")
             println("$before${operator.name}")
             rightChild?.print("$before ")
         }
-        is NumberNode -> println("$before$number")
     }
 }
 

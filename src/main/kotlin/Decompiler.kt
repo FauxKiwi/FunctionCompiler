@@ -6,8 +6,10 @@ object Decompiler {
             val output = mutableListOf<Token>()
 
             when (tree) {
-                is ExpressionNode -> output.add(ExpressionRepresentToken(DeParser(tree.rootNode!!)))
+                is ExpressionNode -> output.add(ExpressionToken(DeParser(tree.rootNode!!)))
+                is FunctionNode -> output.add(FunctionToken(tree.function, DeParser(tree.expr!!)))
                 is NumberNode -> output.add(NumberToken(tree.number))
+                is VarNode -> output.add(VarToken(tree.name))
                 is OperatorNode -> {
                     output.addAll(DeParser(tree.leftChild!!))
                     output.add(OperatorToken(tree.operator))
@@ -27,8 +29,10 @@ object Decompiler {
                 output.append(when (token) {
                     is ExprStartToken -> '('
                     is ExprEndToken -> ')'
-                    is ExpressionRepresentToken -> "(${DeLexer(token.expr)})"
+                    is ExpressionToken -> "(${DeLexer(token.expr)})"
+                    is FunctionToken -> "${token.function.name}(${DeLexer(token.expr)}"
                     is NumberToken -> token.number
+                    is VarToken -> token.name
                     is OperatorToken -> token.operator.toString()
                     is SignToken -> if (token.sign) '+' else '-'
                     else -> ""
