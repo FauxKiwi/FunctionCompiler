@@ -6,6 +6,7 @@ object Decompiler {
             val output = mutableListOf<Token>()
 
             when (tree) {
+                is RootNode -> output.addAll(DeParser(tree.node!!))
                 is ExpressionNode -> output.add(ExpressionToken(DeParser(tree.rootNode!!)))
                 is FunctionNode -> output.add(FunctionToken(tree.function, DeParser(tree.expr!!)))
                 is NumberNode -> output.add(NumberToken(tree.number))

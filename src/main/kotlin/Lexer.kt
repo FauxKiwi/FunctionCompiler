@@ -1,5 +1,5 @@
 object Lexer {
-    operator fun invoke(function: String): List<Token> = TokenConcat(Tokenizer(function))
+    operator fun invoke(function: String): List<Token> = ExprConcat(TokenConcat(Tokenizer(function)))
 
     object Tokenizer {
         operator fun invoke(function: String): List<Token> {
@@ -12,10 +12,11 @@ object Lexer {
             val iterator = function.trimAll().iterator()
             for (c in iterator) {
                 val token: Token = when (lastToken) {
-                    is ExprStartToken, is OperatorToken -> tokenOf(c, TokenType.NUMBER, TokenType.VAR, TokenType.SIGN, TokenType.EXPR_START)
+                    is ExprStartToken, is OperatorToken -> tokenOf(c, TokenType.NUMBER, TokenType.NAME, TokenType.SIGN, TokenType.EXPR_START)
                     is ExprEndToken, is NumberToken -> tokenOf(c, TokenType.NUMBER, TokenType.OPERATOR, TokenType.EXPR_END)
-                    is VarToken -> tokenOf(c, TokenType.OPERATOR, TokenType.EXPR_END)
-                    is SignToken -> tokenOf(c, TokenType.SIGN, TokenType.NUMBER, TokenType.VAR, TokenType.EXPR_START)
+                    is FunctionToken -> tokenOf(c, TokenType.EXPR_START)
+                    is NameToken -> tokenOf(c, TokenType.OPERATOR, TokenType.EXPR_END, TokenType.NAME, TokenType.EXPR_START)
+                    is SignToken -> tokenOf(c, TokenType.SIGN, TokenType.NUMBER, TokenType.NAME, TokenType.EXPR_START)
                     else -> null
                 } ?: throw SyntaxError("Unexpected token '$c'")
                 lastToken = token
@@ -44,13 +45,13 @@ object Lexer {
                 if (c in "+-") return SignToken(c == '+')
             }
             if (accepted.contains(TokenType.EXPR_START)) {
-                if (c in "([") return ExprStartToken()
+                if (c in "(") return ExprStartToken()
             }
             if (accepted.contains(TokenType.EXPR_END)) {
-                if (c in ")]") return ExprEndToken()
+                if (c in ")") return ExprEndToken()
             }
-            if (accepted.contains(TokenType.VAR)) {
-                if (c in "x") return VarToken("x")
+            if (accepted.contains(TokenType.NAME)) {
+                if (c in "abcdefghijklmnopqrstuvwxyz") return NameToken(c.toString())
             }
             return null
         }
@@ -71,7 +72,20 @@ object Lexer {
             var i = 0
             while (i < tokens.size) {
                 val token = tokens[i]
-                if (token is SignToken) {
+                if (token is NameToken) {
+                    val sb = StringBuilder().append(token.name)
+                    var function = false
+                    varConcat@do {
+                        val next = tokens[i+1]
+                        if (next is NameToken) {
+                            sb.append(next.name)
+                        } else if (next is ExprStartToken) {
+                            function = true
+                            break@varConcat
+                        } else break@varConcat
+                    } while (++i < tokens.size - 1)
+                    output.add(if (function) FunStartToken(Function.ofString(sb.toString())) else VarToken(sb.toString()))
+                } else if (token is SignToken) {
                     val newToken = NumberToken(if (token.sign) 1.0 else -1.0)
                     signConcat@do {
                         val next = tokens[i + 1]
@@ -106,6 +120,46 @@ object Lexer {
 
             output.removeAt(0)
             output.removeAt(output.size - 1)
+
+            return output
+        }
+    }
+
+    object ExprConcat {
+        operator fun invoke(tokens: List<Token>): List<Token> {
+            val output = mutableListOf<Token>()
+            var subExpr = mutableListOf<Token>()
+            var function: Function? = null
+            var inFun = false
+            var inSub = false
+
+            for (token in tokens) {
+                if (token is FunStartToken) {
+                    function = token.function
+                    inFun = true
+                    continue
+                }
+                if (token is ExprStartToken) {
+                    subExpr = mutableListOf()
+                    inSub = true
+                    continue
+                }
+                if (token is ExprEndToken) {
+                    if (inFun) {
+                        inFun = false
+                        output.add(FunctionToken(function!!, subExpr))
+                    } else {
+                        output.add(ExpressionToken(subExpr))
+                    }
+                    inSub = false
+                    continue
+                }
+                if (inSub) {
+                    subExpr.add(token)
+                } else {
+                    output.add(token)
+                }
+            }
 
             return output
         }

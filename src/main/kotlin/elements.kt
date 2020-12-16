@@ -4,11 +4,15 @@ import kotlin.math.sqrt
 import kotlin.math.tan
 
 abstract class Token
-enum class TokenType { EXPR_START, EXPR_END, EXPR_REP, FUN_REP, NUMBER, VAR, OPERATOR, SIGN }
+enum class TokenType { EXPR_START, EXPR_END, NAME, NUMBER, OPERATOR, SIGN }
+class NameToken(val name: String) : Token()
 class ExprStartToken : Token()
 class ExprEndToken : Token()
-class ExpressionToken(val expr: List<Token>) : Token()
+class ExpressionToken(var expr: List<Token>) : Token()
+class SortedExpressionToken(var expr: List<Token>) : Token()
+class FunStartToken(val function: Function) : Token()
 class FunctionToken(val function: Function, val expr: List<Token>) : Token()
+class SortedFunctionToken(val function: Function, var expr: List<Token>) : Token()
 class NumberToken(var number: Double) : Token()
 class DotToken : Token()
 class VarToken(val name: String) : Token()
@@ -38,6 +42,7 @@ open class Function(val name: String, val f: (Double) -> Double) {
 }
 
 abstract class TreeNode(val parent: TreeNode?)
+class RootNode(var node: TreeNode?) : TreeNode(null)
 class ExpressionNode(parent: TreeNode?, var rootNode: TreeNode?) : TreeNode(parent)
 class FunctionNode(parent: TreeNode?, val function: Function, var expr: TreeNode?) : TreeNode(parent)
 class NumberNode(parent: TreeNode?, val number: Double) : TreeNode(parent)

@@ -1,21 +1,32 @@
 object Parser {
-    operator fun invoke(tokens: List<Token>): ExpressionNode = TokenParser(ExpressionResolver(TokenSorter(tokens)))
+    operator fun invoke(tokens: List<Token>): RootNode = TokenParser(TokenSorter(tokens))//)
 
     object TokenSorter {
         operator fun invoke(tokens: List<Token>): List<Token> {
             if (tokens.isEmpty()) return listOf()
             val output = mutableListOf<Token>()
 
-            var expr: List<Token> = tokens
+            val expr: MutableList<Token> = tokens.toMutableList()
 
-            val exprEnd = expr.indexOfLast { it is ExprEndToken }
-            if (exprEnd >= 0) {
-                val exprStart = expr.indexOfFirst { it is ExprStartToken }
-                if (exprStart < 0) throw SyntaxError("Closed bracket has not been opened")
-                val subExpr = expr.subList(exprStart + 1, exprEnd)
-                val leftOfSubExpr = if (exprStart > 0) expr.subList(0, exprStart - 1) else listOf()
-                val rightOfSubExpr = if (exprEnd < expr.size - 1) expr.subList(exprEnd + 1, expr.size) else listOf()
-                expr = leftOfSubExpr + ExpressionToken(TokenSorter(subExpr)) + rightOfSubExpr
+           /*repeat(expr.count { it is ExprEndToken }) {
+               val exprEnd = expr.indexOfLast { it is ExprEndToken }
+               if (exprEnd >= 0) {
+                   var function = false
+                   val exprStart = expr.indexOfLast { it is ExprStartToken }
+                   if (exprStart < 0) throw SyntaxError("Closed bracket has not been opened")
+                   if (exprStart > 0 && expr[exprStart - 1] is FunStartToken) function = true
+                   val subExpr = expr.subList(exprStart + 1, exprEnd)
+                   val leftOfSubExpr =
+                       if (exprStart > 0) expr.subList(0, exprStart - if (function) 1 else 2) else listOf()
+                   val rightOfSubExpr = if (exprEnd < expr.size - 1) expr.subList(exprEnd + 1, expr.size) else listOf()
+                   expr = leftOfSubExpr + ExpressionToken(TokenSorter(subExpr)) + rightOfSubExpr
+               }
+           }*/
+            expr.replaceAll {
+                if (it is ExpressionToken)
+                    SortedExpressionToken(TokenSorter(it.expr))
+                else
+                    it
             }
 
             var found: Token?
@@ -23,7 +34,7 @@ object Parser {
             if (found == null) found = expr.reversed().find { it is OperatorToken && (it.operator == Operator.TIMES || it.operator == Operator.DIV || it.operator == Operator.REM) }
             if (found == null) found = expr.reversed().find { it is OperatorToken && it.operator == Operator.POW }
             if (found == null) {
-                found = expr.find { it is NumberToken || it is VarToken || it is ExpressionToken}
+                found = expr.find { it is NumberToken || it is VarToken || it is SortedExpressionToken || it is SortedFunctionToken }
                 return if (found == null) listOf()
                 else listOf(found)
             }
@@ -43,7 +54,7 @@ object Parser {
         }
     }
 
-    object ExpressionResolver {
+    /*object ExpressionResolver {
         operator fun invoke(tokens: List<Token>): List<Token> {
             val output = mutableListOf<Token>()
 
@@ -61,11 +72,11 @@ object Parser {
 
             return output
         }
-    }
+    }*/
 
     object TokenParser {
-        operator fun invoke(tokens: List<Token>): ExpressionNode {
-            val tree = ExpressionNode(null, null)
+        operator fun invoke(tokens: List<Token>): RootNode {
+            val tree = RootNode(null) //ExpressionNode(null, null)
 
             val iterator = tokens.iterator()
 
@@ -73,26 +84,30 @@ object Parser {
             var right = true
             while (iterator.hasNext()) {
                 val token = iterator.next()
-                if (token is ExprStartToken) {
+                /*if (token is ExprStartToken) {
                     while (parent !is ExpressionNode) {
                         parent = parent.parent ?: return tree
                     }
                     parent = parent.parent ?: return tree
-                }
+                }*/
                 val node = nextNode(parent, token)
                 when (parent) {
-                    is ExpressionNode -> parent.rootNode = node
+                    is RootNode -> parent.node = node
+                    //is ExpressionNode -> parent.rootNode = node
                     is OperatorNode -> if (right) parent.rightChild = node else parent.leftChild = node
                 }
                 when (node) {
-                    is ExpressionNode -> {
+                    is RootNode -> {
                         parent = node
                     }
+                    /*is ExpressionNode -> {
+                        parent = node
+                    }*/
                     is OperatorNode -> {
                         parent = node
                         right = true
                     }
-                    is NumberNode, is VarNode -> {
+                    is NumberNode, is VarNode, is ExpressionNode, is FunctionNode -> {
                         if (!right) {
                             do {
                                 parent = parent.parent ?: return tree
@@ -106,8 +121,9 @@ object Parser {
             return tree
         }
 
-        fun nextNode(parent: TreeNode, token: Token): TreeNode = when (token) {
-            is ExprEndToken -> ExpressionNode(parent, null)
+        fun nextNode(parent: TreeNode, token: Token): TreeNode = when (token) { //is ExprEndToken -> ExpressionNode(parent, null)
+            is SortedExpressionToken -> ExpressionNode(parent, TokenParser(token.expr))
+            is SortedFunctionToken -> FunctionNode(parent, token.function, TokenParser(token.expr))
             is NumberToken -> NumberNode(parent, token.number)
             is VarToken -> VarNode(parent, token.name)
             is OperatorToken -> OperatorNode(parent, token.operator, null, null)

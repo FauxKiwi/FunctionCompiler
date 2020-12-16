@@ -5,6 +5,7 @@ object Calculator {
         val varsMap = hashMapOf(*vars)
         try {
             return when (function) {
+                is RootNode -> Calculator(function.node!!, *vars)
                 is ExpressionNode -> Calculator(function.rootNode!!, *vars)
                 is OperatorNode -> when (function.operator) {
                     Operator.PLUS -> Calculator(function.leftChild!!, *vars) + Calculator(function.rightChild!!, *vars)
