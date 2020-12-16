@@ -1,5 +1,5 @@
 object Parser {
-    operator fun invoke(tokens: List<Token>): ExpressionNode = TokenParser(TokenSorter(tokens))
+    operator fun invoke(tokens: List<Token>): ExpressionNode = TokenParser(ExpressionResolver(TokenSorter(tokens)))
 
     object TokenSorter {
         operator fun invoke(tokens: List<Token>): List<Token> {
@@ -14,11 +14,8 @@ object Parser {
                 if (exprStart < 0) throw SyntaxError("Closed bracket has not been opened")
                 val subExpr = expr.subList(exprStart + 1, exprEnd)
                 val leftOfSubExpr = if (exprStart > 0) expr.subList(0, exprStart - 1) else listOf()
-                printTokens(leftOfSubExpr)
                 val rightOfSubExpr = if (exprEnd < expr.size - 1) expr.subList(exprEnd + 1, expr.size) else listOf()
-                printTokens(rightOfSubExpr)
                 expr = leftOfSubExpr + ExpressionRepresentToken(TokenSorter(subExpr)) + rightOfSubExpr
-                printTokens(expr)
             }
 
             var found: Token?

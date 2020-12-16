@@ -27,6 +27,14 @@ fun main() {
     printTree(tree)
     println(" --- ")
     println(Calculator(tree))
+    println()
+    println(" ------- ")
+    println()
+    val dep = Decompiler.DeParser(tree)
+    printTokens(dep)
+    println(" --- ")
+    val del = Decompiler.DeLexer(dep)
+    println(del)
 
     /*val tree = Parser.TokenParser(listOf(
         OperatorToken(Operator.DIV),

@@ -1,5 +1,5 @@
 abstract class Token
-enum class TokenType { EXPR_START, EXPR_END, NUMBER, OPERATOR, SIGN }
+enum class TokenType { EXPR_START, EXPR_END, EXPR_REP, NUMBER, OPERATOR, SIGN }
 class ExprStartToken : Token()
 class ExprEndToken : Token()
 class ExpressionRepresentToken(val expr: List<Token>) : Token()
@@ -12,6 +12,9 @@ enum class Operator(rank: Int) {
         fun ofChar(c: Char) = when (c) {
             '+' -> PLUS; '-' -> MINUS; '*' -> TIMES; '/' -> DIV; '%' -> REM; '^' -> POW; else -> throw SyntaxError("Unknown operator token '$c'")
         }
+    }
+    override fun toString(): String = when (this) {
+        PLUS -> "+"; MINUS -> "-"; TIMES -> "*"; DIV -> "/"; REM -> "%"; POW -> "^"
     }
 }
 
