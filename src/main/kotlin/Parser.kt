@@ -22,12 +22,11 @@ object Parser {
                    expr = leftOfSubExpr + ExpressionToken(TokenSorter(subExpr)) + rightOfSubExpr
                }
            }*/
-            expr.replaceAll {
-                if (it is ExpressionToken)
-                    SortedExpressionToken(TokenSorter(it.expr))
-                else
-                    it
-            }
+            expr.replaceAll { when (it) {
+                is ExpressionToken -> SortedExpressionToken(TokenSorter(it.expr))
+                is FunctionToken -> SortedFunctionToken(it.function, TokenSorter(it.expr))
+                else -> it
+            }}
 
             var found: Token?
             found = expr.reversed().find { it is OperatorToken && (it.operator == Operator.PLUS || it.operator == Operator.MINUS) }

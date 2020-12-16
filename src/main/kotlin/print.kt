@@ -43,7 +43,7 @@ fun TreeNode.print(before: String = "") {
         }
         is ExpressionNode -> {
             println("${before}Expression")
-            rootNode?.print("$before| ")
+            expr?.print("$before| ")
         }
         is FunctionNode -> {
             println("${before}Function ${function.name}")

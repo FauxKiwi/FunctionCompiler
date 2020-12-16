@@ -43,7 +43,7 @@ open class Function(val name: String, val f: (Double) -> Double) {
 
 abstract class TreeNode(val parent: TreeNode?)
 class RootNode(var node: TreeNode?) : TreeNode(null)
-class ExpressionNode(parent: TreeNode?, var rootNode: TreeNode?) : TreeNode(parent)
+class ExpressionNode(parent: TreeNode?, var expr: TreeNode?) : TreeNode(parent)
 class FunctionNode(parent: TreeNode?, val function: Function, var expr: TreeNode?) : TreeNode(parent)
 class NumberNode(parent: TreeNode?, val number: Double) : TreeNode(parent)
 class VarNode(parent: TreeNode?, val name: String) : TreeNode(parent)

@@ -7,7 +7,7 @@ object Decompiler {
 
             when (tree) {
                 is RootNode -> output.addAll(DeParser(tree.node!!))
-                is ExpressionNode -> output.add(ExpressionToken(DeParser(tree.rootNode!!)))
+                is ExpressionNode -> output.add(ExpressionToken(DeParser(tree.expr!!)))
                 is FunctionNode -> output.add(FunctionToken(tree.function, DeParser(tree.expr!!)))
                 is NumberNode -> output.add(NumberToken(tree.number))
                 is VarNode -> output.add(VarToken(tree.name))
@@ -31,7 +31,7 @@ object Decompiler {
                     is ExprStartToken -> '('
                     is ExprEndToken -> ')'
                     is ExpressionToken -> "(${DeLexer(token.expr)})"
-                    is FunctionToken -> "${token.function.name}(${DeLexer(token.expr)}"
+                    is FunctionToken -> "${token.function.name}(${DeLexer(token.expr)})"
                     is NumberToken -> token.number
                     is VarToken -> token.name
                     is OperatorToken -> token.operator.toString()

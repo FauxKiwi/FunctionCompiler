@@ -14,7 +14,7 @@ fun main() {
 
     println(Calculator("1-+5^3/5"))*/
 
-    val tokens = Lexer.Tokenizer("(abc-6)^3/5+(3-2)")
+    val tokens = Lexer.Tokenizer("(abc-6)^3/5+sqrt(3--2/2)")
     printTokens(tokens)
     println(" --- ")
     val concat = Lexer.TokenConcat(tokens)
